@@ -9,7 +9,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
  
- 
 
 /**
  *
@@ -17,26 +16,24 @@ import java.io.FileWriter;
  */
 public class Manejadorbd {
 
-    
-// ORDENES debe ser inicializado con el archivo ORDENES.txt
-public static File ORDENES;
-// ORDENES debe ser inicializado con el archivo CLIENTES.txt
-public static File CLIENTES;
+    private static final String ORDENES = "Ordenes.txt";
+    private static final String CLIENTES = "Clientes.txt";
+
 private static final String separador = "/";
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-
+        buscarEnArchivo("Luis Perez");
     }
     
     /**
-     * Busca a un cliente en la base de datos. Si la persona buscada es cliente, se crea 
-     * un reporte con el historial de las ordenes de dicho cliente.
+     * Busca a un cliente en la base de datos. Si la persona buscada es cliente, el método regresa el idCliente
+     * de lo contrario regresa -1
      * @param nombreCliente el cliente a buscar en la base de datos.
      */
-    public static void buscarEnArchivo(final String nombreCliente){
+    public static int buscarCliente(final String nombreCliente) {
         BufferedReader br;
         String line;
         try {
@@ -44,26 +41,42 @@ private static final String separador = "/";
             while((line = br.readLine()) != null) {
                 //asumiendo que el formato de los registros de clientes es idCliente/nombreCliente
                 String[] campos = line.split(separador);
-                if(campos[1].equals(nombreCliente)) {          
-                    crearReporte(campos[0], nombreCliente);
+                if(campos[1].equals(nombreCliente)) {        
                     br.close();
-                    break;              
+                    return Integer.parseInt(campos[0]);
                 }
             }
-            br.close();
-            System.out.println("Persona no es cliente");
+            br.close();           
         }
         catch(Exception e) {
+            System.err.println(e.getMessage());
+        }
+        return -1;
+    }
+    
+    /**
+     * Busca a un cliente en la base de datos para crear
+     * un reporte con el historial de las ordenes de dicho cliente.
+     * @param nombreCliente el cliente a buscar en la base de datos.
+     */
+    public static void buscarEnArchivo(final String nombreCliente){
+        int idCliente = buscarCliente(nombreCliente);
+        if(idCliente != -1) {
+            crearReporte(idCliente, nombreCliente);
+        }
+        else {
             System.out.println("Persona no es cliente");
         }
     }
+                 
+                    
     /**
      * Crea un reporte basado en el historial de consumo del cliente con identificador idCliente; el reporte se 
      * escribe en el archivo Reporte_idCliente.txt
      * @param idCliente
      * @param nombreCliente
      */
-    public static void crearReporte(final String idCliente, final String nombreCliente) {
+    public static void crearReporte(final int idCliente, final String nombreCliente) {
     BufferedReader br;
     FileWriter fw;
     int ordenesCliente = 0;
@@ -71,13 +84,14 @@ private static final String separador = "/";
         try {
             br = new BufferedReader(new FileReader(ORDENES));
             //falta abodar el caso en el que el archivo Reporte_idCliente ya exista
-            fw = new FileWriter(new File("Reporte_+idCliente.txt"));
+            fw = new FileWriter(new File("Reporte_"+idCliente+".txt"));
+            fw.write("Cliente: " + nombreCliente + System.getProperty("line.separator"));
             while((line = br.readLine()) != null) {
                 //asumiendo que el formato de los registros de ORDENES es idCliente/Platillo/Cantidad/Total
                 String[] campos = line.split(separador);
-                if(campos[0].equals(idCliente)) {
-                    //escribe en el archivo Reporte_idCliente una linea con formato nombreCliente/Platillo/Cantidad/Total
-                    fw.write(nombreCliente + " " + campos[1] + " " + campos[2] + " " + campos[3] + "\n");
+                if(Integer.parseInt(campos[0]) == idCliente) {                    
+                    //escribe en el archivo Reporte_idCliente una linea con formato Platillo/Cantidad/Total
+                    fw.write(campos[1] + " " + campos[2] + " " + campos[3] + System.getProperty("line.separator"));
                     ordenesCliente++;
                 }
             }
@@ -90,5 +104,4 @@ private static final String separador = "/";
             System.err.println(e.getMessage());
         }
     }
-    
 }
